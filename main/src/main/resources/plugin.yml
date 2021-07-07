@@ -1,0 +1,9 @@
+name: VacuumPlugin
+version: ${project.version}
+main: net.kunmc.lab.vacuumplugin.VacuumPlugin
+api-version: 1.16
+authors: [ Bun133 ]
+website: https://twitter.com/bun133_
+commands:
+  va:
+    # 実行時生成されます
