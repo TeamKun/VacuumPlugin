@@ -8,8 +8,9 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.player.PlayerTeleportEvent
+import org.bukkit.event.vehicle.VehicleExitEvent
 import kotlin.math.min
 
 // 一番下のPlayerが代表してregister
@@ -22,56 +23,95 @@ class VacuumEntry(val e: VacuumEntity) {
         const val Offset = 2.0
     }
 
-    val entities = mutableListOf<VacuumEntity>()
+    /**
+     * LivingEntity -> 豚
+     */
+    val entities = mutableListOf<Pair<VacuumEntity, LivingEntity>>()
+    var doubleAEC: DoubleAEC? = null
 
     // 上にTP
     fun teleport() {
         entities.removeAll {
-            val b = it.isDead()
+            val b = it.first.isDead()
             if (b) {
-                log("${it.getEntity()?.name} is Removed")
+                log("${it.first.getEntity()?.name} is Removed")
             }
 
             return@removeAll b
         }
         val ee = e.getEntity()
         if (ee != null) {
-            entities
+
+            if (doubleAEC == null) {
+                // DoubleAEC Init
+                doubleAEC = DoubleAEC(ee)
+            }
+
+            if (!doubleAEC!!.first.isCarriedBy(ee)) {
+                // AECだけおいていかれない対策
+                doubleAEC!!.first.forceGetOn(ee)
+            }
+
+            val nl = entities
                 .mapNotNull {
-                    it.getEntity()
+                    val e = it.first.getEntity()
+                    if (e == null) null
+                    else Pair(e, it.second)
                 }
-                .forEachIndexed { index, livingEntity ->
-                    if(livingEntity is Player){
-                        log("Teleporting:"+ComponentUtils.toText(livingEntity.displayName()))
+
+            nl.forEachIndexed { index, livingEntity ->
+                if (livingEntity is Player) {
+                    log("Teleporting:" + ComponentUtils.toText(livingEntity.displayName()))
+                }
+
+                when (index) {
+                    0 -> {
+                        if (!livingEntity.second.isCarriedBy(doubleAEC!!.second)) {
+                            // 豚、AECに乗る
+                            error("Force Getting On")
+                            livingEntity.second.forceGetOn(doubleAEC!!.second)
+                        }
+
+                        if (!livingEntity.first.isCarriedBy(livingEntity.second)) {
+                            // 人、透明な豚に乗る
+                            error("Force Getting On")
+                            livingEntity.first.forceGetOn(livingEntity.second)
+                        }
                     }
 
-                    livingEntity.location.set(
-                        ee.location.x,
-                        ee.location.y + firstOffset + Offset * index,
-                        ee.location.z
-                    )
-                    val loc = ee.location.add(.0, firstOffset + Offset * index, .0)
-                    loc.yaw = ee.location.yaw
-                    loc.pitch = ee.location.pitch
-                    livingEntity.teleport(
-                        loc,
-                        PlayerTeleportEvent.TeleportCause.PLUGIN
-                    )
-                }
+                    else -> {
+                        val beforeE = nl[index - 1]
+                        if (!livingEntity.second.isCarriedBy(beforeE.first)) {
+                            // 豚、下の人に乗る
+                            error("Force Getting On")
+                            livingEntity.second.forceGetOn(beforeE.first)
+                        }
 
-            log("Size:${entities.mapNotNull { it.getEntity() }.count()}")
+                        if (!livingEntity.first.isCarriedBy(livingEntity.second)) {
+                            // 人、透明な豚に乗る
+                            error("Force Getting On")
+                            livingEntity.first.forceGetOn(livingEntity.second)
+                        }
+                    }
+                }
+            }
+            log("Size:${nl.count()}")
         }
     }
 
     fun carry(ee: LivingEntity) {
-        entities.add(VacuumEntity(ee))
+        entities.add(Pair(VacuumEntity(ee), spawnDummy(ee)))
     }
 
     fun unCarry(ee: LivingEntity) {
-        entities.removeAll { it.getEntity()?.uniqueId == ee.uniqueId }
+        entities.removeAll { it.first.getEntity()?.uniqueId == ee.uniqueId }
     }
 
     fun unCarryAll() {
+        entities.forEach {
+            it.first.getEntity()?.getOffAll()
+            it.second.health = 0.0
+        }
         entities.clear()
     }
 
@@ -86,7 +126,7 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
 
     val entries = mutableListOf<VacuumEntry>()
     var isGoingOn = false
-    var ScoreBoardManager = ScoreBoardManager(plugin,this)
+    var ScoreBoardManager = ScoreBoardManager(plugin, this)
 
 
     @EventHandler
@@ -94,11 +134,19 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
         if (e.entity is LivingEntity) {
             val entry = get(e.entity as LivingEntity)
             if (entry != null) {
-                if (entry.entities.any { it.getEntity()?.uniqueId == e.damager.uniqueId }) {
+                if (entry.entities.any { it.first.getEntity()?.uniqueId == e.damager.uniqueId }) {
                     // 乗っけてる人からのダメージ
                     e.isCancelled = true
                 }
             }
+        }
+    }
+
+    @EventHandler
+    fun onEntityDeath(e: EntityDeathEvent) {
+        if (entries.any { vacuumEntry -> vacuumEntry.entities.any { it.second == e.entity } }) {
+            // 豚ちゃん保護
+            e.isCancelled = true
         }
     }
 
@@ -151,11 +199,11 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
                         // ②
                         log("誰か担いでいる")
                         entry.entities
-                            .mapNotNull { it.getEntity() }
+                            .mapNotNull { it.first.getEntity() }
                             .forEach {
-                            // 担がれてる人全員回復
-                            it.health = it.getAttribute(Attribute.GENERIC_MAX_HEALTH)!!.value
-                        }
+                                // 担がれてる人全員回復
+                                it.health = it.getAttribute(Attribute.GENERIC_MAX_HEALTH)!!.value
+                            }
                         entry.unCarryAll()
                         // 1tick後に体力を50%に
                         val l = entry.e.getEntity()
@@ -172,6 +220,18 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
 
     }
 
+    @EventHandler
+    fun onVehicleExit(e: VehicleExitEvent) {
+        if (isGoingOn) {
+            if (isCarried(e.exited)) {
+                e.vehicle.addPassenger(e.exited)
+                e.isCancelled = true
+            } else {
+                error("isCarried:False")
+            }
+        }
+    }
+
 
     // 復活時に体力50%にしなきゃいけない人
     val limited = mutableListOf<LivingEntity>()
@@ -181,16 +241,16 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
             entries.filter { entry ->
                 val ee = entry.e.getEntity()
                 if (ee != null) {
-                    entry.entities.any { it.getEntity()?.uniqueId == e.uniqueId } || ee == e
+                    entry.entities.any { it.first.getEntity()?.uniqueId == e.uniqueId } || ee == e
                 } else {
-                    entry.entities.any { it.getEntity()?.uniqueId == e.uniqueId }
+                    entry.entities.any { it.first.getEntity()?.uniqueId == e.uniqueId }
                 }
             }
         return if (l.isNotEmpty()) l[0]
         else null
     }
 
-    fun getOfBottom(e:LivingEntity):VacuumEntry?{
+    fun getOfBottom(e: LivingEntity): VacuumEntry? {
         val l =
             entries.filter { entry ->
                 val ee = entry.e.getEntity()
@@ -214,7 +274,7 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
     }
 
     fun isCarried(e: LivingEntity): Boolean =
-        entries.any { entry -> entry.entities.any { it.getEntity()?.uniqueId == e.uniqueId } }
+        entries.any { entry -> entry.entities.any { it.first.getEntity()?.uniqueId == e.uniqueId } }
 
     // 全員の体力調整
     fun updateAbility() {

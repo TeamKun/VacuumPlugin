@@ -29,6 +29,19 @@ class VacuumEntity(private val e: LivingEntity) {
         }
     }
 
+
+    fun isOffline(): Boolean {
+        val e = getEntity()
+        if (e == null) {
+            return false
+        } else {
+            if (e is Player) {
+                return !e.isOnline
+            }
+            return false
+        }
+    }
+
     fun getEntity(): LivingEntity? {
         if (flag) {
             return Bukkit.getOnlinePlayers().filter { it.uniqueId == uuid }.getOrNull(0)
