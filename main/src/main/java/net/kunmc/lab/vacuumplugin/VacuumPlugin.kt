@@ -47,6 +47,13 @@ class VacuumPlugin : JavaPlugin() {
                     VacuumEntryManager?.isGoingOn = false
                     Bukkit.broadcastMessage("吸収終了!")
                     return@setInvoker true
+                },
+            CommanderBuilder<VacuumPlugin>()
+                .addFilter(CommanderBuilder.Filters.OP<VacuumPlugin>())
+                .addTabChain(TabChain(TabObject("debug"), TabObject("true", "false")))
+                .setInvoker { vacuumPlugin, commandSender, strings ->
+                    isLogOutPut = strings[1].toBooleanStrict()
+                    return@setInvoker true
                 }
         )
 
