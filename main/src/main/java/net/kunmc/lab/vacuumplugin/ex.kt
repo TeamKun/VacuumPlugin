@@ -13,11 +13,16 @@ fun spawnAEC(p: Entity): AreaEffectCloud {
     return e
 }
 
+/**
+ * 各プレイヤーの間に挟むダミー(豚)をスポーン
+ */
 fun spawnDummy(p: Entity): LivingEntity {
     val e = p.world.spawnEntity(p.location,EntityType.PIG) as Pig
     e.isInvisible = true
-    e.setSaddle(true)
+//    e.setSaddle(true)
     e.setAI(false)
+    e.isSilent = true
+    e.isInvulnerable = true
     return e
 }
 
@@ -25,8 +30,7 @@ fun Entity.isCarrying(other: Entity) = containPassenger(other)
 
 fun Entity.isCarried() = Bukkit.getOnlinePlayers().any { it.isCarrying(this) }
 fun Entity.isCarriedBy(carrier: Entity) = carrier.isCarrying(this)
-fun Entity.getOffAll() =
-    Bukkit.getOnlinePlayers().forEach { it.removePassenger(this) }
+fun Entity.getOffAll() = leaveVehicle()
 
 fun Entity.forceGetOn(to: Entity) {
     getOffAll()

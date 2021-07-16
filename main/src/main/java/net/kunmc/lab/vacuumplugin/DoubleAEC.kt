@@ -3,7 +3,14 @@ package net.kunmc.lab.vacuumplugin
 import org.bukkit.entity.LivingEntity
 
 class DoubleAEC(livingEntity: LivingEntity) {
+    /**
+     * 下のほうのAEC
+     */
     val first = spawnAEC(livingEntity)
+
+    /**
+     * 上の方のAEC
+     */
     val second = spawnAEC(livingEntity)
 
     init {
