@@ -56,7 +56,16 @@ class VacuumEntry(val e: VacuumEntity) {
                 .mapNotNull {
                     val e = it.first.getEntity()
                     if (e == null) null
-                    else Pair(e, it.second)
+                    else {
+                        var second = it.second
+                        // 豚デスポチェック
+                        if (second.isDead) {
+                            second = spawnDummy(e)
+                            error("豚デスポ")
+                        }
+
+                        Pair(e, second)
+                    }
                 }
 
             nl.forEachIndexed { index, livingEntity ->
@@ -66,15 +75,22 @@ class VacuumEntry(val e: VacuumEntity) {
 
                 when (index) {
                     0 -> {
-                        if (!livingEntity.second.isCarriedBy(doubleAEC!!.second)) {
+
+                        if (doubleAEC!!.first.isDead) {
+                            doubleAEC!!.first = spawnAEC(doubleAEC!!.livingEntity)
+                            error("DoubleAECデスポ")
+                        }
+
+
+                        if (!livingEntity.second.isCarriedBy(doubleAEC!!.first)) {
                             // 豚、AECに乗る
-                            error("Force Getting On")
-                            livingEntity.second.forceGetOn(doubleAEC!!.second)
+//                            error("Force Getting On")
+                            livingEntity.second.forceGetOn(doubleAEC!!.first)
                         }
 
                         if (!livingEntity.first.isCarriedBy(livingEntity.second)) {
                             // 人、透明な豚に乗る
-                            error("Force Getting On")
+//                            error("Force Getting On")
                             livingEntity.first.forceGetOn(livingEntity.second)
                         }
                     }
@@ -83,13 +99,13 @@ class VacuumEntry(val e: VacuumEntity) {
                         val beforeE = nl[index - 1]
                         if (!livingEntity.second.isCarriedBy(beforeE.first)) {
                             // 豚、下の人に乗る
-                            error("Force Getting On")
+//                            error("Force Getting On")
                             livingEntity.second.forceGetOn(beforeE.first)
                         }
 
                         if (!livingEntity.first.isCarriedBy(livingEntity.second)) {
                             // 人、透明な豚に乗る
-                            error("Force Getting On")
+//                            error("Force Getting On")
                             livingEntity.first.forceGetOn(livingEntity.second)
                         }
                     }

@@ -31,42 +31,43 @@ fun VacuumCommand(plugin: VacuumPlugin) = Commander(
         .addTabChain(TabChain(TabObject("end")))
         .setInvoker { _, _, _ ->
             plugin.VacuumEntryManager?.isGoingOn = false
+            plugin.VacuumEntryManager?.reset()
             @Suppress("DEPRECATION")
             Bukkit.broadcastMessage("吸収終了!")
             return@setInvoker true
         },
-    CommanderBuilder<VacuumPlugin>()
-        .addFilter(CommanderBuilder.Filters.OP())
-        .addTabChain(TabChain(TabObject("debug"), TabObject("true", "false")))
-        .setInvoker { _, _, strings ->
-            isLogOutPut = strings[1].toBooleanStrict()
-            return@setInvoker true
-        },
-    CommanderBuilder<VacuumPlugin>()
-        .addFilter(CommanderBuilder.Filters.OP())
-        .addTabChain(TabChain(TabObject("test"), TabObject("List")))
-        .setInvoker { _, sender, strings ->
-            when (strings[1]) {
-                "List" -> {
-                    val manager = plugin.VacuumEntryManager
-                    if (manager == null) {
-                        sender.sendMessage("Manager is Null")
-                        return@setInvoker true
-                    }
-                    sender.sendMessage("Listing All Entry")
-                    manager.entries.forEachIndexed { index, vacuumEntry ->
-                        sender.sendMessage("VacuumEntry[$index]:")
-                        sender.sendVacuumEntry(vacuumEntry.e)
-                        vacuumEntry.entities.forEachIndexed { i, pair ->
-                            sender.sendMessage("VacuumEntities[$i]:")
-                            sender.sendVacuumEntry(pair.first)
-                        }
-                    }
-                }
-            }
-
-            return@setInvoker true
-        }
+//    CommanderBuilder<VacuumPlugin>()
+//        .addFilter(CommanderBuilder.Filters.OP())
+//        .addTabChain(TabChain(TabObject("debug"), TabObject("true", "false")))
+//        .setInvoker { _, _, strings ->
+//            isLogOutPut = strings[1].toBooleanStrict()
+//            return@setInvoker true
+//        },
+//    CommanderBuilder<VacuumPlugin>()
+//        .addFilter(CommanderBuilder.Filters.OP())
+//        .addTabChain(TabChain(TabObject("test"), TabObject("List")))
+//        .setInvoker { _, sender, strings ->
+//            when (strings[1]) {
+//                "List" -> {
+//                    val manager = plugin.VacuumEntryManager
+//                    if (manager == null) {
+//                        sender.sendMessage("Manager is Null")
+//                        return@setInvoker true
+//                    }
+//                    sender.sendMessage("Listing All Entry")
+//                    manager.entries.forEachIndexed { index, vacuumEntry ->
+//                        sender.sendMessage("VacuumEntry[$index]:")
+//                        sender.sendVacuumEntry(vacuumEntry.e)
+//                        vacuumEntry.entities.forEachIndexed { i, pair ->
+//                            sender.sendMessage("VacuumEntities[$i]:")
+//                            sender.sendVacuumEntry(pair.first)
+//                        }
+//                    }
+//                }
+//            }
+//
+//            return@setInvoker true
+//        }
 )
 
 fun CommandSender.sendVacuumEntry(e: VacuumEntity) {

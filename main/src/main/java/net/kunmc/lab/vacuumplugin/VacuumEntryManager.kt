@@ -120,7 +120,7 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
                 e.vehicle.addPassenger(e.exited)
                 e.isCancelled = true
             } else {
-                error("isCarried:False")
+//                error("isCarried:False")
             }
         }
     }
@@ -211,6 +211,7 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
     }
 
     fun reset() {
+        entries.forEach { it.unCarryAll() }
         entries.clear()
     }
 }
