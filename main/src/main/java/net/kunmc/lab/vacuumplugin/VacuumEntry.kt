@@ -58,11 +58,6 @@ class VacuumEntry(val e: VacuumEntity) {
                     if (e == null) null
                     else {
                         var second = it.second
-                        // 豚デスポチェック
-                        if (second.isDead) {
-                            second = spawnDummy(e)
-                            error("豚デスポ")
-                        }
 
                         Pair(e, second)
                     }
@@ -75,12 +70,6 @@ class VacuumEntry(val e: VacuumEntity) {
 
                 when (index) {
                     0 -> {
-
-                        if (doubleAEC!!.first.isDead) {
-                            doubleAEC!!.first = spawnAEC(doubleAEC!!.livingEntity)
-                            error("DoubleAECデスポ")
-                        }
-
 
                         if (!livingEntity.second.isCarriedBy(doubleAEC!!.first)) {
                             // 豚、AECに乗る
