@@ -73,13 +73,13 @@ class VacuumEntry(val e: VacuumEntity, val manager: VacuumEntryManager) {
 
                         if (!livingEntity.second.isCarriedBy(doubleAEC!!.first)) {
                             // 豚、AECに乗る
-                            error("Force Getting On")
+//                            error("Force Getting On")
                             livingEntity.second.forceGetOn(doubleAEC!!.first, manager)
                         }
 
                         if (!livingEntity.first.isCarriedBy(livingEntity.second)) {
                             // 人、透明な豚に乗る
-                            error("Force Getting On")
+//                            error("Force Getting On")
                             livingEntity.first.forceGetOn(livingEntity.second, manager)
                         }
                     }
@@ -88,13 +88,13 @@ class VacuumEntry(val e: VacuumEntity, val manager: VacuumEntryManager) {
                         val beforeE = nl[index - 1]
                         if (!livingEntity.second.isCarriedBy(beforeE.first)) {
                             // 豚、下の人に乗る
-                            error("Force Getting On")
+//                            error("Force Getting On")
                             livingEntity.second.forceGetOn(beforeE.first, manager)
                         }
 
                         if (!livingEntity.first.isCarriedBy(livingEntity.second)) {
                             // 人、透明な豚に乗る
-                            error("Force Getting On")
+//                            error("Force Getting On")
                             livingEntity.first.forceGetOn(livingEntity.second, manager)
                         }
                     }
