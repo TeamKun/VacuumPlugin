@@ -14,7 +14,7 @@ import org.bukkit.event.vehicle.VehicleExitEvent
 import kotlin.math.min
 
 // 一番下のPlayerが代表してregister
-class VacuumEntry(val e: VacuumEntity) {
+class VacuumEntry(val e: VacuumEntity, val manager: VacuumEntryManager) {
     companion object {
         // 初めの人からどれぐらい離すか
         const val firstOffset = 2.0
@@ -44,12 +44,12 @@ class VacuumEntry(val e: VacuumEntity) {
 
             if (doubleAEC == null) {
                 // DoubleAEC Init
-                doubleAEC = DoubleAEC(ee)
+                doubleAEC = DoubleAEC(ee, manager)
             }
 
             if (!doubleAEC!!.first.isCarriedBy(ee)) {
                 // AECだけおいていかれない対策
-                doubleAEC!!.first.forceGetOn(ee)
+                doubleAEC!!.first.forceGetOn(ee, manager)
             }
 
             val nl = entities
@@ -57,7 +57,7 @@ class VacuumEntry(val e: VacuumEntity) {
                     val e = it.first.getEntity()
                     if (e == null) null
                     else {
-                        var second = it.second
+                        val second = it.second
 
                         Pair(e, second)
                     }
@@ -73,14 +73,14 @@ class VacuumEntry(val e: VacuumEntity) {
 
                         if (!livingEntity.second.isCarriedBy(doubleAEC!!.first)) {
                             // 豚、AECに乗る
-//                            error("Force Getting On")
-                            livingEntity.second.forceGetOn(doubleAEC!!.first)
+                            error("Force Getting On")
+                            livingEntity.second.forceGetOn(doubleAEC!!.first, manager)
                         }
 
                         if (!livingEntity.first.isCarriedBy(livingEntity.second)) {
                             // 人、透明な豚に乗る
-//                            error("Force Getting On")
-                            livingEntity.first.forceGetOn(livingEntity.second)
+                            error("Force Getting On")
+                            livingEntity.first.forceGetOn(livingEntity.second, manager)
                         }
                     }
 
@@ -88,19 +88,18 @@ class VacuumEntry(val e: VacuumEntity) {
                         val beforeE = nl[index - 1]
                         if (!livingEntity.second.isCarriedBy(beforeE.first)) {
                             // 豚、下の人に乗る
-//                            error("Force Getting On")
-                            livingEntity.second.forceGetOn(beforeE.first)
+                            error("Force Getting On")
+                            livingEntity.second.forceGetOn(beforeE.first, manager)
                         }
 
                         if (!livingEntity.first.isCarriedBy(livingEntity.second)) {
                             // 人、透明な豚に乗る
-//                            error("Force Getting On")
-                            livingEntity.first.forceGetOn(livingEntity.second)
+                            error("Force Getting On")
+                            livingEntity.first.forceGetOn(livingEntity.second, manager)
                         }
                     }
                 }
             }
-            log("Size:${nl.count()}")
         }
     }
 
@@ -113,11 +112,17 @@ class VacuumEntry(val e: VacuumEntity) {
     }
 
     fun unCarryAll() {
-        entities.forEach {
-            it.first.getEntity()?.getOffAll()
-            it.second.health = 0.0
-        }
+        val es = mutableListOf<Pair<VacuumEntity, LivingEntity>>()
+        es.addAll(entities)
         entities.clear()
+        es.forEachIndexed { index, pair ->
+            val e = pair.first.getEntity()
+            if (e != null) {
+                log("Index:${index},Name:${pair.first.getEntity()?.name} is unCarryAll")
+                if(!pair.second.removePassenger(e)) log("Error:in unCarryAll")
+            }
+            pair.second.health = 0.0
+        }
     }
 
     fun isSingle() = entities.isEmpty()

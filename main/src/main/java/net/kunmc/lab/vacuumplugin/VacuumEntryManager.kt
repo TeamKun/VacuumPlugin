@@ -96,7 +96,8 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
                             .forEach {
                                 // 担がれてる人全員回復
                                 it.health = it.getAttribute(Attribute.GENERIC_MAX_HEALTH)!!.value
-                            }
+//                                it.getOffAll(this)
+                          }
                         entry.unCarryAll()
                         // 1tick後に体力を50%に
                         val l = entry.e.getEntity()
@@ -117,6 +118,7 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
     fun onVehicleExit(e: VehicleExitEvent) {
         if (isGoingOn) {
             if (isCarried(e.exited)) {
+                log("onVehicleExit")
                 e.vehicle.addPassenger(e.exited)
                 e.isCancelled = true
             } else {
@@ -161,7 +163,7 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
         val g = get(e)
         if (g != null) return g
         log("Register!:$e")
-        val gg = VacuumEntry(VacuumEntity(e))
+        val gg = VacuumEntry(VacuumEntity(e),this)
         entries.add(gg)
         return gg
     }

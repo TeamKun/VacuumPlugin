@@ -2,7 +2,7 @@ package net.kunmc.lab.vacuumplugin
 
 import org.bukkit.entity.LivingEntity
 
-class DoubleAEC(val livingEntity: LivingEntity) {
+class DoubleAEC(val livingEntity: LivingEntity,manager: VacuumEntryManager) {
     /**
      * 下のほうのAEC
      */
@@ -13,7 +13,7 @@ class DoubleAEC(val livingEntity: LivingEntity) {
      */
 
     init {
-        first.forceGetOn(livingEntity)
+        livingEntity.addPassenger(first)
     }
 
     fun addPassenger(e: LivingEntity) {
