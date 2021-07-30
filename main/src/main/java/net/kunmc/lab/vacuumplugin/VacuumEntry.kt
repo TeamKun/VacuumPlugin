@@ -1,9 +1,11 @@
 package net.kunmc.lab.vacuumplugin
 
 import com.github.bun133.flylib2.utils.ComponentUtils
+import com.sun.source.util.Plugin
 import org.bukkit.attribute.Attribute
 import org.bukkit.attribute.AttributeModifier
 import org.bukkit.entity.LivingEntity
+import org.bukkit.entity.Pig
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -11,6 +13,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.vehicle.VehicleExitEvent
+import org.bukkit.plugin.java.JavaPlugin
 import kotlin.math.min
 
 // 一番下のPlayerが代表してregister
@@ -119,11 +122,49 @@ class VacuumEntry(val e: VacuumEntity, val manager: VacuumEntryManager) {
             val e = pair.first.getEntity()
             if (e != null) {
                 log("Index:${index},Name:${pair.first.getEntity()?.name} is unCarryAll")
-                if(!pair.second.removePassenger(e)) log("Error:in unCarryAll")
+                if (!pair.second.removePassenger(e)) log("Error:in unCarryAll")
             }
+            pair.second.onDeath(manager.plugin) { it.drops.clear() }
             pair.second.health = 0.0
         }
     }
 
     fun isSingle() = entities.isEmpty()
+}
+
+fun LivingEntity.onDeath(p: JavaPlugin, f: (EntityDeathEvent) -> Unit) {
+    OnDeath.get(p).add(this, f)
+}
+
+class OnDeath(p: JavaPlugin) : Listener {
+    companion object {
+        fun get(p: JavaPlugin): OnDeath {
+            if (instance != null) return instance!!
+            else instance = OnDeath(p);return instance!!
+        }
+
+        var instance: OnDeath? = null
+    }
+
+    init {
+        p.server.pluginManager.registerEvents(this,p)
+    }
+
+    val list = mutableListOf<Pair<LivingEntity, (EntityDeathEvent) -> Unit>>()
+
+    fun add(e: LivingEntity, f: (EntityDeathEvent) -> Unit) {
+        list.add(Pair(e, f))
+    }
+
+    @EventHandler
+    fun onDeath(e: EntityDeathEvent) {
+        log("onDeath!")
+        list.removeAll {
+            if (e.entity == it.first) {
+                it.second(e)
+                return@removeAll true
+            }
+            return@removeAll false
+        }
+    }
 }
