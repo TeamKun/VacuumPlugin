@@ -30,6 +30,9 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
                 if (entry.entities.any { it.first.getEntity()?.uniqueId == e.damager.uniqueId }) {
                     // 乗っけてる人からのダメージ
                     e.isCancelled = true
+                }else if(isCarried(e.entity as LivingEntity)){
+                    log("のっかっている人へのダメージ")
+                    e.isCancelled = true
                 }
             }
         }
