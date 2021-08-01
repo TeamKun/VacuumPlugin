@@ -30,9 +30,18 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
                 if (entry.entities.any { it.first.getEntity()?.uniqueId == e.damager.uniqueId }) {
                     // 乗っけてる人からのダメージ
                     e.isCancelled = true
-                }else if(isCarried(e.entity as LivingEntity)){
+                } else if (isCarried(e.entity as LivingEntity)) {
                     log("のっかっている人へのダメージ")
                     e.isCancelled = true
+                }
+            } else {
+                // ゲームに参加していない人用
+                if (e.damager is LivingEntity) {
+                    val damager = e.damager as LivingEntity
+                    if (isCarried(damager)) {
+                        log("のっかっている人から参加していない人へダメージ")
+                        e.isCancelled = true
+                    }
                 }
             }
         }
@@ -100,7 +109,7 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
                                 // 担がれてる人全員回復
                                 it.health = it.getAttribute(Attribute.GENERIC_MAX_HEALTH)!!.value
 //                                it.getOffAll(this)
-                          }
+                            }
                         entry.unCarryAll()
                         // 1tick後に体力を50%に
                         val l = entry.e.getEntity()
@@ -166,7 +175,7 @@ class VacuumEntryManager(val plugin: VacuumPlugin) : Listener {
         val g = get(e)
         if (g != null) return g
         log("Register!:$e")
-        val gg = VacuumEntry(VacuumEntity(e),this)
+        val gg = VacuumEntry(VacuumEntity(e), this)
         entries.add(gg)
         return gg
     }
